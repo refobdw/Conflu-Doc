@@ -12,7 +12,7 @@ import { createConfluencePage, getPageUrl } from '../api/confluence';
 import { createNotionPage } from '../api/notion';
 import { CONFIG } from '../config';
 
-type AlertState = { visible: boolean; title: string; message: string; buttons: DialogButton[] };
+type AlertState = { visible: boolean; title: string; message: string; buttons: DialogButton[]; vertical?: boolean };
 const CLOSED: AlertState = { visible: false, title: '', message: '', buttons: [] };
 
 export function NewDocumentScreen() {
@@ -26,8 +26,8 @@ export function NewDocumentScreen() {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [alert, setAlert] = useState<AlertState>(CLOSED);
 
-  const showAlert = (title: string, message: string, buttons?: DialogButton[]) =>
-    setAlert({ visible: true, title, message, buttons: buttons ?? [{ text: '확인', onPress: () => setAlert(CLOSED) }] });
+  const showAlert = (title: string, message: string, buttons?: DialogButton[], vertical?: boolean) =>
+    setAlert({ visible: true, title, message, buttons: buttons ?? [{ text: '확인', onPress: () => setAlert(CLOSED) }], vertical });
 
   async function handleGenerate() {
     if (!title.trim() || !content.trim()) {
@@ -52,14 +52,14 @@ export function NewDocumentScreen() {
     if (!html) { showAlert('오류', '먼저 AI 생성을 실행해주세요.'); return; }
 
     const buttons: DialogButton[] = [
-      { text: '취소', cancel: true, onPress: () => setAlert(CLOSED) },
       { text: 'Confluence', onPress: () => { setAlert(CLOSED); uploadToConfluence(); } },
       ...(CONFIG.notion.apiKey ? [
         { text: 'Notion', onPress: () => { setAlert(CLOSED); uploadToNotion(); } },
-        { text: '모두', onPress: () => { setAlert(CLOSED); uploadToBoth(); } },
+        { text: '모두 저장', onPress: () => { setAlert(CLOSED); uploadToBoth(); } },
       ] : []),
+      { text: '취소', cancel: true, onPress: () => setAlert(CLOSED) },
     ];
-    showAlert('저장 위치 선택', '어디에 저장할까요?', buttons);
+    showAlert('저장 위치 선택', '어디에 저장할까요?', buttons, true);
   }
 
   async function uploadToConfluence() {
@@ -168,6 +168,7 @@ export function NewDocumentScreen() {
         title={alert.title}
         message={alert.message}
         buttons={alert.buttons}
+        vertical={alert.vertical}
       />
     </>
   );

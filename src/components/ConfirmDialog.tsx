@@ -12,9 +12,10 @@ type Props = {
   title: string;
   message?: string;
   buttons: DialogButton[];
+  vertical?: boolean;
 };
 
-export function ConfirmDialog({ visible, title, message, buttons }: Props) {
+export function ConfirmDialog({ visible, title, message, buttons, vertical }: Props) {
   return (
     <Modal transparent animationType="fade" visible={visible} statusBarTranslucent>
       <View style={styles.overlay}>
@@ -22,11 +23,14 @@ export function ConfirmDialog({ visible, title, message, buttons }: Props) {
           <Text style={styles.title}>{title}</Text>
           {message ? <Text style={styles.message}>{message}</Text> : null}
           <View style={styles.divider} />
-          <View style={styles.buttons}>
+          <View style={[styles.buttons, vertical && styles.buttonsVertical]}>
             {buttons.map((btn, i) => (
               <TouchableOpacity
                 key={i}
-                style={[styles.btn, i < buttons.length - 1 && styles.btnBorder]}
+                style={[
+                  styles.btn,
+                  vertical ? styles.btnVerticalBorder : (i < buttons.length - 1 && styles.btnBorder),
+                ]}
                 onPress={btn.onPress}
               >
                 <Text style={[styles.btnText, btn.cancel && styles.btnCancelText]}>
@@ -77,6 +81,9 @@ const styles = StyleSheet.create({
   buttons: {
     flexDirection: 'row',
   },
+  buttonsVertical: {
+    flexDirection: 'column',
+  },
   btn: {
     flex: 1,
     paddingVertical: 14,
@@ -85,6 +92,10 @@ const styles = StyleSheet.create({
   btnBorder: {
     borderRightWidth: StyleSheet.hairlineWidth,
     borderRightColor: '#ccc',
+  },
+  btnVerticalBorder: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#ccc',
   },
   btnText: {
     fontSize: 17,

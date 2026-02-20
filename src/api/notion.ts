@@ -59,7 +59,7 @@ export async function createNotionPage(
     properties: {
       '이름': { title: [{ text: { content: title } }] },
       '상태': { status: { name: '작성완료' } },
-      URL: { url: confluenceUrl },
+      ...(confluenceUrl ? { URL: { url: confluenceUrl } } : {}),
       '자원': { relation: [{ id: '2b9041ed-b161-80d3-8836-e726c5d7049b' }] },
     },
     children,
