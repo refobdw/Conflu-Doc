@@ -48,21 +48,28 @@ export function NewDocumentScreen() {
     }
   }
 
-  async function handleUpload() {
+  function handleSave() {
     if (!html) { showAlert('오류', '먼저 AI 생성을 실행해주세요.'); return; }
+
+    const buttons: DialogButton[] = [
+      { text: '취소', cancel: true, onPress: () => setAlert(CLOSED) },
+      { text: 'Confluence', onPress: () => { setAlert(CLOSED); uploadToConfluence(); } },
+      ...(CONFIG.notion.apiKey ? [
+        { text: 'Notion', onPress: () => { setAlert(CLOSED); uploadToNotion(); } },
+        { text: '모두', onPress: () => { setAlert(CLOSED); uploadToBoth(); } },
+      ] : []),
+    ];
+    showAlert('저장 위치 선택', '어디에 저장할까요?', buttons);
+  }
+
+  async function uploadToConfluence() {
     setLoading(true);
     setStatus('Confluence에 업로드 중...');
     try {
       const page = await createConfluencePage(title, html);
       const url = getPageUrl(page.id);
       setStatus(`완료! ${url}`);
-      showAlert('업로드 완료', url, [
-        { text: '닫기', cancel: true, onPress: () => setAlert(CLOSED) },
-        ...(CONFIG.notion.apiKey ? [{
-          text: 'Notion에도 저장',
-          onPress: () => { setAlert(CLOSED); handleNotionSave(url); },
-        }] : []),
-      ]);
+      showAlert('Confluence 저장 완료', url);
     } catch (e: any) {
       showAlert('업로드 오류', e.message);
     } finally {
@@ -70,13 +77,38 @@ export function NewDocumentScreen() {
     }
   }
 
-  async function handleNotionSave(confluenceUrl: string) {
+  async function uploadToNotion() {
     if (!CONFIG.notion.apiKey) return;
     setLoading(true);
     setStatus('Notion에 저장 중...');
     try {
-      const result = await createNotionPage(title, html, confluenceUrl);
+      const result = await createNotionPage(title, html, '');
       showAlert('Notion 저장 완료', result.url);
+      setStatus(`완료! ${result.url}`);
+    } catch (e: any) {
+      showAlert('Notion 오류', e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function uploadToBoth() {
+    setLoading(true);
+    setStatus('Confluence에 업로드 중...');
+    let confluenceUrl = '';
+    try {
+      const page = await createConfluencePage(title, html);
+      confluenceUrl = getPageUrl(page.id);
+    } catch (e: any) {
+      showAlert('Confluence 오류', e.message);
+      setLoading(false);
+      return;
+    }
+    setStatus('Notion에 저장 중...');
+    try {
+      const result = await createNotionPage(title, html, confluenceUrl);
+      setStatus('모두 저장 완료!');
+      showAlert('저장 완료', `Confluence: ${confluenceUrl}\nNotion: ${result.url}`);
     } catch (e: any) {
       showAlert('Notion 오류', e.message);
     } finally {
@@ -115,8 +147,8 @@ export function NewDocumentScreen() {
       ) : null}
 
       {html ? (
-        <TouchableOpacity style={[styles.btn, styles.btnSuccess]} onPress={handleUpload} disabled={loading}>
-          <Text style={styles.btnText}>Confluence 업로드</Text>
+        <TouchableOpacity style={[styles.btn, styles.btnSuccess]} onPress={handleSave} disabled={loading}>
+          <Text style={styles.btnText}>저장하기</Text>
         </TouchableOpacity>
       ) : null}
     </ScrollView>
