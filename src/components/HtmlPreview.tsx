@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
 type Props = {
@@ -23,10 +24,15 @@ const wrapHtml = (body: string) => `
 `;
 
 export function HtmlPreview({ html, visible, onClose, asModal }: Props) {
+  const insets = useSafeAreaInsets();
+
   const content = (
     <View style={styles.container}>
       {asModal && (
-        <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+        <TouchableOpacity
+          style={[styles.closeBtn, { paddingTop: insets.top + 12 }]}
+          onPress={onClose}
+        >
           <Text style={styles.closeText}>닫기</Text>
         </TouchableOpacity>
       )}
