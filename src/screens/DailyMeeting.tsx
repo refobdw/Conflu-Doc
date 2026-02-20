@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, ActivityIndicator,
+  Text, TextInput, TouchableOpacity, ScrollView,
+  StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { SplitView } from '../components/SplitView';
 import { HtmlPreview } from '../components/HtmlPreview';
+import { ConfirmDialog, DialogButton } from '../components/ConfirmDialog';
 import { useLayout } from '../hooks/useLayout';
 import { parseDailyInput, generateDailyHTML, optimizeWithAI, getDailyTitle } from '../utils/dailyMeeting';
 import { createConfluencePage, searchConfluenceByTitle, updateConfluencePage, getPageUrl } from '../api/confluence';
 import { createNotionPage } from '../api/notion';
 import { CONFIG } from '../config';
+
+type AlertState = { visible: boolean; title: string; message: string; buttons: DialogButton[] };
+const CLOSED: AlertState = { visible: false, title: '', message: '', buttons: [] };
 
 export function DailyMeetingScreen() {
   const { isTablet } = useLayout();
@@ -19,9 +23,13 @@ export function DailyMeetingScreen() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [alert, setAlert] = useState<AlertState>(CLOSED);
+
+  const showAlert = (title: string, message: string, buttons?: DialogButton[]) =>
+    setAlert({ visible: true, title, message, buttons: buttons ?? [{ text: '확인', onPress: () => setAlert(CLOSED) }] });
 
   async function handleGenerate() {
-    if (!content.trim()) { Alert.alert('오류', '회의록 내용을 입력해주세요.'); return; }
+    if (!content.trim()) { showAlert('오류', '회의록 내용을 입력해주세요.'); return; }
     setLoading(true);
     setStatus('파싱 및 AI 최적화 중...');
     try {
@@ -31,14 +39,14 @@ export function DailyMeetingScreen() {
       setHtml(result);
       setStatus('생성 완료! 미리보기를 확인하세요.');
     } catch (e: any) {
-      Alert.alert('오류', e.message);
+      showAlert('오류', e.message);
     } finally {
       setLoading(false);
     }
   }
 
   async function handleUpload() {
-    if (!html) { Alert.alert('오류', '먼저 회의록을 생성해주세요.'); return; }
+    if (!html) { showAlert('오류', '먼저 회의록을 생성해주세요.'); return; }
     setLoading(true);
     setStatus('Confluence에 업로드 중...');
     try {
@@ -54,14 +62,15 @@ export function DailyMeetingScreen() {
       }
       const url = getPageUrl(pageId);
       setStatus(`완료! ${url}`);
-      Alert.alert('업로드 완료', url, [
-        { text: '닫기' },
-        ...(CONFIG.notion.apiKey
-          ? [{ text: 'Notion에도 저장', onPress: () => handleNotionSave(url) }]
-          : []),
+      showAlert('업로드 완료', url, [
+        { text: '닫기', cancel: true, onPress: () => setAlert(CLOSED) },
+        ...(CONFIG.notion.apiKey ? [{
+          text: 'Notion에도 저장',
+          onPress: () => { setAlert(CLOSED); handleNotionSave(url); },
+        }] : []),
       ]);
     } catch (e: any) {
-      Alert.alert('오류', e.message);
+      showAlert('오류', e.message);
     } finally {
       setLoading(false);
     }
@@ -71,9 +80,9 @@ export function DailyMeetingScreen() {
     setLoading(true);
     try {
       const result = await createNotionPage(title, html, confluenceUrl);
-      Alert.alert('Notion 저장 완료', result.url);
+      showAlert('Notion 저장 완료', result.url);
     } catch (e: any) {
-      Alert.alert('Notion 오류', e.message);
+      showAlert('Notion 오류', e.message);
     } finally {
       setLoading(false);
     }
@@ -117,6 +126,12 @@ export function DailyMeetingScreen() {
       {!isTablet && (
         <HtmlPreview html={html} asModal visible={previewVisible} onClose={() => setPreviewVisible(false)} />
       )}
+      <ConfirmDialog
+        visible={alert.visible}
+        title={alert.title}
+        message={alert.message}
+        buttons={alert.buttons}
+      />
     </>
   );
 }

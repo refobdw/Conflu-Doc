@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  ScrollView, StyleSheet, Alert, ActivityIndicator,
+  Text, TextInput, TouchableOpacity,
+  ScrollView, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { SplitView } from '../components/SplitView';
 import { HtmlPreview } from '../components/HtmlPreview';
+import { ConfirmDialog, DialogButton } from '../components/ConfirmDialog';
 import { useLayout } from '../hooks/useLayout';
 import { geminiRequest } from '../api/gemini';
 import { createConfluencePage, getPageUrl } from '../api/confluence';
 import { createNotionPage } from '../api/notion';
 import { CONFIG } from '../config';
+
+type AlertState = { visible: boolean; title: string; message: string; buttons: DialogButton[] };
+const CLOSED: AlertState = { visible: false, title: '', message: '', buttons: [] };
 
 export function NewDocumentScreen() {
   const { isTablet } = useLayout();
@@ -20,10 +24,14 @@ export function NewDocumentScreen() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [alert, setAlert] = useState<AlertState>(CLOSED);
+
+  const showAlert = (title: string, message: string, buttons?: DialogButton[]) =>
+    setAlert({ visible: true, title, message, buttons: buttons ?? [{ text: '확인', onPress: () => setAlert(CLOSED) }] });
 
   async function handleGenerate() {
     if (!title.trim() || !content.trim()) {
-      Alert.alert('오류', '제목과 내용을 입력해주세요.');
+      showAlert('오류', '제목과 내용을 입력해주세요.');
       return;
     }
     setLoading(true);
@@ -33,7 +41,7 @@ export function NewDocumentScreen() {
       setHtml(result);
       setStatus('생성 완료! 미리보기를 확인하세요.');
     } catch (e: any) {
-      Alert.alert('AI 오류', e.message);
+      showAlert('AI 오류', e.message);
       setStatus('');
     } finally {
       setLoading(false);
@@ -41,23 +49,22 @@ export function NewDocumentScreen() {
   }
 
   async function handleUpload() {
-    if (!html) { Alert.alert('오류', '먼저 AI 생성을 실행해주세요.'); return; }
+    if (!html) { showAlert('오류', '먼저 AI 생성을 실행해주세요.'); return; }
     setLoading(true);
     setStatus('Confluence에 업로드 중...');
     try {
       const page = await createConfluencePage(title, html);
       const url = getPageUrl(page.id);
       setStatus(`완료! ${url}`);
-      if (CONFIG.notion.apiKey) {
-        Alert.alert('업로드 완료', url, [
-          { text: '닫기' },
-          { text: 'Notion에도 저장', onPress: () => handleNotionSave(url) },
-        ]);
-      } else {
-        Alert.alert('업로드 완료', url);
-      }
+      showAlert('업로드 완료', url, [
+        { text: '닫기', cancel: true, onPress: () => setAlert(CLOSED) },
+        ...(CONFIG.notion.apiKey ? [{
+          text: 'Notion에도 저장',
+          onPress: () => { setAlert(CLOSED); handleNotionSave(url); },
+        }] : []),
+      ]);
     } catch (e: any) {
-      Alert.alert('업로드 오류', e.message);
+      showAlert('업로드 오류', e.message);
     } finally {
       setLoading(false);
     }
@@ -69,9 +76,9 @@ export function NewDocumentScreen() {
     setStatus('Notion에 저장 중...');
     try {
       const result = await createNotionPage(title, html, confluenceUrl);
-      Alert.alert('Notion 저장 완료', result.url);
+      showAlert('Notion 저장 완료', result.url);
     } catch (e: any) {
-      Alert.alert('Notion 오류', e.message);
+      showAlert('Notion 오류', e.message);
     } finally {
       setLoading(false);
     }
@@ -124,6 +131,12 @@ export function NewDocumentScreen() {
       {!isTablet && (
         <HtmlPreview html={html} asModal visible={previewVisible} onClose={() => setPreviewVisible(false)} />
       )}
+      <ConfirmDialog
+        visible={alert.visible}
+        title={alert.title}
+        message={alert.message}
+        buttons={alert.buttons}
+      />
     </>
   );
 }

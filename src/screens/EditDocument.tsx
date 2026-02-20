@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, ActivityIndicator, FlatList,
+  StyleSheet, ActivityIndicator, FlatList,
 } from 'react-native';
 import { SplitView } from '../components/SplitView';
 import { HtmlPreview } from '../components/HtmlPreview';
+import { ConfirmDialog, DialogButton } from '../components/ConfirmDialog';
 import { useLayout } from '../hooks/useLayout';
 import { geminiRequest, GeminiTurn } from '../api/gemini';
 import {
@@ -15,6 +16,8 @@ import {
 const MAX_FULL_TURNS = 2;
 
 type ChatMessage = { role: 'user' | 'ai'; text: string };
+type AlertState = { visible: boolean; title: string; message: string; buttons: DialogButton[] };
+const CLOSED: AlertState = { visible: false, title: '', message: '', buttons: [] };
 
 export function EditDocumentScreen() {
   const { isTablet } = useLayout();
@@ -25,6 +28,7 @@ export function EditDocumentScreen() {
   const [status, setStatus] = useState('');
   const [previewVisible, setPreviewVisible] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [alert, setAlert] = useState<AlertState>(CLOSED);
 
   const [originalContent, setOriginalContent] = useState('');
   const [originalTitle, setOriginalTitle] = useState('');
@@ -35,9 +39,12 @@ export function EditDocumentScreen() {
   const [recentTurns, setRecentTurns] = useState<{ user: GeminiTurn; model: GeminiTurn }[]>([]);
   const [pageLoaded, setPageLoaded] = useState(false);
 
+  const showAlert = (title: string, message: string, buttons?: DialogButton[]) =>
+    setAlert({ visible: true, title, message, buttons: buttons ?? [{ text: '확인', onPress: () => setAlert(CLOSED) }] });
+
   async function handleLoadPage() {
     const pageId = extractPageId(pageInput);
-    if (!pageId) { Alert.alert('오류', '유효한 Confluence URL 또는 페이지 ID를 입력해주세요.'); return; }
+    if (!pageId) { showAlert('오류', '유효한 Confluence URL 또는 페이지 ID를 입력해주세요.'); return; }
     setLoading(true);
     setStatus('페이지를 불러오는 중...');
     try {
@@ -57,7 +64,7 @@ export function EditDocumentScreen() {
       setPageLoaded(true);
       setStatus(`로드 완료: "${page.title}"`);
     } catch (e: any) {
-      Alert.alert('오류', e.message);
+      showAlert('오류', e.message);
       setStatus('');
     } finally {
       setLoading(false);
@@ -106,7 +113,7 @@ export function EditDocumentScreen() {
       setEditInstruction('');
       setStatus('수정 완료! 미리보기를 확인하세요.');
     } catch (e: any) {
-      Alert.alert('수정 오류', e.message);
+      showAlert('수정 오류', e.message);
     } finally {
       setLoading(false);
     }
@@ -121,9 +128,9 @@ export function EditDocumentScreen() {
       await deleteConfluencePage(scratchPageId);
       const url = getPageUrl(originalPageId);
       setStatus(`완료! ${url}`);
-      Alert.alert('업데이트 완료', url);
+      showAlert('업데이트 완료', url);
     } catch (e: any) {
-      Alert.alert('오류', e.message);
+      showAlert('오류', e.message);
     } finally {
       setLoading(false);
     }
@@ -186,6 +193,12 @@ export function EditDocumentScreen() {
       {!isTablet && (
         <HtmlPreview html={html} asModal visible={previewVisible} onClose={() => setPreviewVisible(false)} />
       )}
+      <ConfirmDialog
+        visible={alert.visible}
+        title={alert.title}
+        message={alert.message}
+        buttons={alert.buttons}
+      />
     </>
   );
 }
