@@ -6,9 +6,14 @@
     "api/confluence-proxy.js": {
       "memory": 128,
       "maxDuration": 10
+    },
+    "api/notion-proxy.js": {
+      "memory": 128,
+      "maxDuration": 10
     }
   },
   "rewrites": [
-    { "source": "/api/confluence-proxy", "destination": "/api/confluence-proxy" }
+    { "source": "/api/confluence-proxy", "destination": "/api/confluence-proxy" },
+    { "source": "/api/notion-proxy", "destination": "/api/notion-proxy" }
   ]
 }

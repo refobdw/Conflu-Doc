@@ -1,4 +1,25 @@
+import { Platform } from 'react-native';
 import { CONFIG } from '../config';
+
+const IS_WEB = Platform.OS === 'web';
+
+function notionApiUrl(path: string): string {
+  if (IS_WEB) {
+    return `/api/notion-proxy?_path=${encodeURIComponent(path)}`;
+  }
+  return `https://api.notion.com/v1/${path}`;
+}
+
+function notionApiHeaders(): Record<string, string> {
+  const base: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Notion-Version': '2022-06-28',
+  };
+  if (!IS_WEB) {
+    base['Authorization'] = `Bearer ${CONFIG.notion.apiKey}`;
+  }
+  return base;
+}
 
 function htmlToText(html: string): string {
   return html
@@ -19,7 +40,7 @@ export async function createNotionPage(
   htmlContent: string,
   confluenceUrl: string
 ): Promise<{ url: string }> {
-  if (!CONFIG.notion.apiKey || !CONFIG.notion.databaseId) {
+  if (!IS_WEB && (!CONFIG.notion.apiKey || !CONFIG.notion.databaseId)) {
     throw new Error('Notion API 키 또는 데이터베이스 ID가 설정되지 않았습니다.');
   }
 
@@ -44,13 +65,9 @@ export async function createNotionPage(
     children,
   };
 
-  const res = await fetch('https://api.notion.com/v1/pages', {
+  const res = await fetch(notionApiUrl('pages'), {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${CONFIG.notion.apiKey}`,
-      'Content-Type': 'application/json',
-      'Notion-Version': '2022-06-28',
-    },
+    headers: notionApiHeaders(),
     body: JSON.stringify(payload),
   });
 
