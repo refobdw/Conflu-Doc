@@ -1,5 +1,14 @@
 {
   "buildCommand": "npx expo export --platform web",
   "outputDirectory": "dist",
-  "installCommand": "npm install --legacy-peer-deps --include=dev"
+  "installCommand": "npm install --legacy-peer-deps --include=dev",
+  "functions": {
+    "api/confluence-proxy.js": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
+    { "source": "/api/confluence-proxy", "destination": "/api/confluence-proxy" }
+  ]
 }

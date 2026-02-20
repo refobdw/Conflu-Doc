@@ -1,6 +1,22 @@
+import { Platform } from 'react-native';
 import { CONFIG, getAuth } from '../config';
 
-const base = () => `https://${CONFIG.atlassian.baseUrl}`;
+const IS_WEB = Platform.OS === 'web';
+
+function apiUrl(path: string, query?: Record<string, string>): string {
+  if (IS_WEB) {
+    const params = new URLSearchParams({ _path: path, ...query });
+    return `/api/confluence-proxy?${params.toString()}`;
+  }
+  const qs = query ? '?' + new URLSearchParams(query).toString() : '';
+  return `https://${CONFIG.atlassian.baseUrl}/wiki/rest/api/${path}${qs}`;
+}
+
+function apiHeaders(): Record<string, string> {
+  const base: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json' };
+  if (!IS_WEB) base['Authorization'] = getAuth();
+  return base;
+}
 
 export type ConfluencePage = {
   id: string;
@@ -11,8 +27,8 @@ export type ConfluencePage = {
 
 export async function getConfluencePage(pageId: string): Promise<ConfluencePage> {
   const res = await fetch(
-    `${base()}/wiki/rest/api/content/${pageId}?expand=body.storage,version`,
-    { headers: { Authorization: getAuth(), Accept: 'application/json' } }
+    apiUrl(`content/${pageId}`, { expand: 'body.storage,version' }),
+    { headers: apiHeaders() }
   );
   const json = await res.json();
   if (!res.ok) throw new Error(`페이지 조회 실패 (${res.status}): ${json.message ?? ''}`);
@@ -27,9 +43,9 @@ export async function createConfluencePage(title: string, htmlBody: string): Pro
     ancestors: [{ id: CONFIG.atlassian.parentId }],
     body: { storage: { value: htmlBody, representation: 'storage' } },
   };
-  const res = await fetch(`${base()}/wiki/rest/api/content`, {
+  const res = await fetch(apiUrl('content'), {
     method: 'POST',
-    headers: { Authorization: getAuth(), Accept: 'application/json', 'Content-Type': 'application/json' },
+    headers: apiHeaders(),
     body: JSON.stringify(payload),
   });
   const json = await res.json();
@@ -46,9 +62,9 @@ export async function updateConfluencePage(
     body: { storage: { value: htmlBody, representation: 'storage' } },
     version: { number: version + 1 },
   };
-  const res = await fetch(`${base()}/wiki/rest/api/content/${pageId}`, {
+  const res = await fetch(apiUrl(`content/${pageId}`), {
     method: 'PUT',
-    headers: { Authorization: getAuth(), Accept: 'application/json', 'Content-Type': 'application/json' },
+    headers: apiHeaders(),
     body: JSON.stringify(payload),
   });
   const json = await res.json();
@@ -57,18 +73,17 @@ export async function updateConfluencePage(
 }
 
 export async function deleteConfluencePage(pageId: string): Promise<void> {
-  const res = await fetch(`${base()}/wiki/rest/api/content/${pageId}`, {
+  const res = await fetch(apiUrl(`content/${pageId}`), {
     method: 'DELETE',
-    headers: { Authorization: getAuth() },
+    headers: IS_WEB ? {} : { Authorization: getAuth() },
   });
   if (!res.ok) throw new Error(`페이지 삭제 실패: ${res.status}`);
 }
 
 export async function searchConfluenceByTitle(title: string): Promise<ConfluencePage[]> {
-  const encoded = encodeURIComponent(title);
   const res = await fetch(
-    `${base()}/wiki/rest/api/content?title=${encoded}&spaceKey=${CONFIG.atlassian.spaceKey}&expand=version`,
-    { headers: { Authorization: getAuth(), Accept: 'application/json' } }
+    apiUrl('content', { title, spaceKey: CONFIG.atlassian.spaceKey, expand: 'version' }),
+    { headers: apiHeaders() }
   );
   const json = await res.json();
   if (!res.ok) throw new Error(`검색 실패 (${res.status})`);
