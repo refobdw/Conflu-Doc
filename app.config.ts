@@ -4,6 +4,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'ConfluDoc',
   slug: 'confludoc',
+  web: {
+    bundler: 'metro',
+    favicon: './assets/favicon.png',
+    name: 'ConfluDoc',
+    shortName: 'ConfluDoc',
+    backgroundColor: '#ffffff',
+    themeColor: '#0052CC',
+  },
   extra: {
     atlassianEmail: process.env.ATLASSIAN_EMAIL,
     atlassianApiToken: process.env.ATLASSIAN_API_TOKEN,
