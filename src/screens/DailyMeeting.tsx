@@ -52,16 +52,19 @@ export function DailyMeetingScreen() {
     setLoading(true);
     setStatus('Confluence에 업로드 중...');
     try {
+      let finalTitle = title;
       const existing = await searchConfluenceByTitle(title);
-      let pageId: string;
       if (existing.length > 0) {
-        const page = existing[0];
-        await updateConfluencePage(page.id, title, html, page.version.number);
-        pageId = page.id;
-      } else {
-        const page = await createConfluencePage(title, html, CONFIG.atlassian.parentIdDaily);
-        pageId = page.id;
+        let n = 1;
+        while (true) {
+          const candidate = `${title} (${n})`;
+          const found = await searchConfluenceByTitle(candidate);
+          if (found.length === 0) { finalTitle = candidate; break; }
+          n++;
+        }
       }
+      const page = await createConfluencePage(finalTitle, html, CONFIG.atlassian.parentIdDaily);
+      const pageId = page.id;
       const url = getPageUrl(pageId);
       setStatus('업로드 완료!');
       showAlert('업로드 완료', '페이지가 생성되었습니다.', [
