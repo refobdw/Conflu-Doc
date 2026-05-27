@@ -13,7 +13,7 @@ import { ConfirmDialog, DialogButton } from '../components/ConfirmDialog';
 import { geminiRequest, GeminiTurn } from '../api/gemini';
 import {
   createConfluencePage, updateConfluencePage,
-  deleteConfluencePage, getPageUrl,
+  deleteConfluencePage, getPageUrl, searchConfluenceByTitle,
 } from '../api/confluence';
 import { CONFIG } from '../config';
 
@@ -125,7 +125,18 @@ export function NewDocumentScreen() {
     setLoading(true);
     setStatus('최종 페이지를 생성하는 중...');
     try {
-      const page = await createConfluencePage(title, currentWiki, CONFIG.atlassian.parentIdDoc, 'wiki');
+      let finalTitle = title;
+      const existing = await searchConfluenceByTitle(title);
+      if (existing.length > 0) {
+        let n = 1;
+        while (true) {
+          const candidate = `${title} (${n})`;
+          const found = await searchConfluenceByTitle(candidate);
+          if (found.length === 0) { finalTitle = candidate; break; }
+          n++;
+        }
+      }
+      const page = await createConfluencePage(finalTitle, currentWiki, CONFIG.atlassian.parentIdDoc, 'wiki');
       const url = getPageUrl(page.id);
       try { await deleteConfluencePage(scratchPageId); } catch {}
       setFinalPageUrl(url);
