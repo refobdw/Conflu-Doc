@@ -9,14 +9,12 @@ export const CONFIG = {
     baseUrl: extra.atlassianBaseUrl as string,
     spaceKey: extra.confluenceSpaceKey as string,
     parentId: extra.confluenceParentId as string,
+    parentIdDoc: (extra.confluenceParentIdDoc ?? extra.confluenceParentId) as string,
+    parentIdDaily: (extra.confluenceParentIdDaily ?? extra.confluenceParentId) as string,
   },
   gemini: {
     apiKey: extra.geminiApiKey as string,
     model: (extra.geminiModel as string) || 'gemini-2.5-flash',
-  },
-  notion: {
-    apiKey: extra.notionApiKey as string,
-    databaseId: extra.notionDatabaseId as string,
   },
 };
 

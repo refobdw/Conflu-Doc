@@ -18,9 +18,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     atlassianBaseUrl: process.env.ATLASSIAN_BASE_URL,
     confluenceSpaceKey: process.env.CONFLUENCE_SPACE_KEY,
     confluenceParentId: process.env.CONFLUENCE_PARENT_ID,
+    confluenceParentIdDoc: process.env.CONFLUENCE_PARENT_ID_DOC,
+    confluenceParentIdDaily: process.env.CONFLUENCE_PARENT_ID_DAILY,
     geminiApiKey: process.env.GEMINI_API_KEY,
     geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-    notionApiKey: process.env.NOTION_API_KEY,
-    notionDatabaseId: process.env.NOTION_DATABASE_ID,
   },
 });
