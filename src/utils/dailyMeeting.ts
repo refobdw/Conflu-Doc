@@ -2,7 +2,7 @@ import { geminiRequestRaw } from '../api/gemini';
 
 export type DailySections = Record<string, string[]>;
 
-const SECTION_KEYS = ['프로그램', '엔진', '월드', '전투', 'AD', 'PM', 'PD', '대표님', '공지 및 기타'];
+const SECTION_KEYS = ['프로그램', '엔진', '기획', 'AD', 'PM', 'PD', '대표님', '공지 및 기타'];
 
 export function parseDailyInput(inputText: string): DailySections {
   const sections: DailySections = Object.fromEntries(SECTION_KEYS.map((k) => [k, []]));
@@ -15,8 +15,7 @@ export function parseDailyInput(inputText: string): DailySections {
     let found: string | null = null;
     if (header.includes('프로그램')) found = '프로그램';
     else if (header.includes('엔진')) found = '엔진';
-    else if (header.includes('월드')) found = '월드';
-    else if (header.includes('전투')) found = '전투';
+    else if (header.includes('기획')) found = '기획';
     else if (header.includes('아트') || header.includes('AD')) found = 'AD';
     else if (header.includes('PM')) found = 'PM';
     else if (header.includes('PD')) found = 'PD';
@@ -42,12 +41,21 @@ export function generateDailyHTML(sections: DailySections): string {
 }
 
 export async function optimizeWithAI(sections: DailySections): Promise<DailySections> {
-  const prompt = `당신은 유능한 PM입니다. 입력된 회의록 내용을 정리하여 JSON 형식으로 응답하십시오.
-규칙: 개조식 문장, 명사형 어미, \`- **주제:** 내용\` 형식.
-반드시 아래 JSON 구조로만 답변하십시오:
-{"프로그램":[],"엔진":[],"월드":[],"전투":[],"AD":[],"PM":[],"PD":[],"대표님":[],"공지 및 기타":[]}
+  const prompt = `당신은 유능한 PM입니다. 입력된 회의록 내용을 **[작성 규칙]**에 따라 정리하여 **JSON 형식**으로 응답하십시오.
 
-입력:
+### [작성 규칙]
+1. 철저한 **개조식** 문장을 사용합니다.
+2. 문장의 끝은 반드시 **'~ 진행 중', '~ 함', '~ 음', '~ 예정', '~ 것'** 등 명사형이나 진행형으로 끝맺으십시오.
+3. 각 항목의 시작은 반드시 \`- **주제:** 내용\` 형식이어야 합니다.
+4. 게임 개발 전문 용어는 그대로 사용하십시오.
+
+### [응답 형식]
+반드시 아래와 같은 JSON 구조로만 답변하십시오. 다른 설명이나 텍스트는 일체 제외하십시오.
+{"프로그램":[],"엔진":[],"기획":[],"AD":[],"PM":[],"PD":[],"대표님":[],"공지 및 기타":[]}
+
+**주의:** 입력된 "아트"는 "AD" 키에, "경영진"은 "대표님" 키에 매핑하십시오.
+
+입력 내용:
 ${JSON.stringify(sections, null, 2)}`;
 
   try {
