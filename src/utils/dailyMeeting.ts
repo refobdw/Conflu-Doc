@@ -31,10 +31,17 @@ export function parseDailyInput(inputText: string): DailySections {
   return sections;
 }
 
+function formatItem(line: string): string {
+  return line
+    .trim()
+    .replace(/^[-•]\s*/, '')
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+}
+
 export function generateDailyHTML(sections: DailySections): string {
   const rows = SECTION_KEYS.map((key) => {
     const items = sections[key] ?? [];
-    const listItems = items.filter(Boolean).map((l) => `<li>${l.trim()}</li>`).join('');
+    const listItems = items.filter(Boolean).map((l) => `<li>${formatItem(l)}</li>`).join('');
     return `<tr><td><b>${key}</b></td><td><ul>${listItems}</ul></td></tr>`;
   }).join('');
   return `<table><thead><tr><th>팀</th><th>Doing</th></tr></thead><tbody>${rows}</tbody></table>`;
