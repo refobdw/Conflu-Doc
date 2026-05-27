@@ -18,6 +18,25 @@ function apiHeaders(): Record<string, string> {
   return base;
 }
 
+export function cleanHtmlForConfluence(html: string): string {
+  if (!html) return '';
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) html = bodyMatch[1];
+  html = html.replace(/<(h[1-6])[^>]*>([\s\S]*?)<\/\1>/gi, (match, tag, content, offset) => {
+    const before = html.slice(0, offset);
+    const openLi = before.lastIndexOf('<li');
+    const closeLi = before.lastIndexOf('</li>');
+    if (openLi !== -1 && openLi > closeLi) return `<p><strong>${content}</strong></p>`;
+    return match;
+  });
+  html = html.replace(/<ac:[^>]*>[\s\S]*?<\/ac:[^>]+>/gi, '');
+  html = html.replace(/<ac:[^/]*\/>/gi, '');
+  html = html.replace(/<ri:[^/]*\/>/gi, '');
+  html = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  return html.trim();
+}
+
 export type ConfluencePage = {
   id: string;
   title: string;
@@ -35,13 +54,18 @@ export async function getConfluencePage(pageId: string): Promise<ConfluencePage>
   return json;
 }
 
-export async function createConfluencePage(title: string, htmlBody: string): Promise<ConfluencePage> {
+export async function createConfluencePage(
+  title: string,
+  body: string,
+  parentId?: string,
+  representation: 'storage' | 'wiki' = 'storage'
+): Promise<ConfluencePage> {
   const payload = {
     type: 'page',
     title,
     space: { key: CONFIG.atlassian.spaceKey },
-    ancestors: [{ id: CONFIG.atlassian.parentId }],
-    body: { storage: { value: htmlBody, representation: 'storage' } },
+    ancestors: [{ id: parentId ?? CONFIG.atlassian.parentId }],
+    body: { storage: { value: body, representation } },
   };
   const res = await fetch(apiUrl('content'), {
     method: 'POST',
@@ -54,12 +78,16 @@ export async function createConfluencePage(title: string, htmlBody: string): Pro
 }
 
 export async function updateConfluencePage(
-  pageId: string, title: string, htmlBody: string, version: number
+  pageId: string,
+  title: string,
+  body: string,
+  version: number,
+  representation: 'storage' | 'wiki' = 'storage'
 ): Promise<ConfluencePage> {
   const payload = {
     type: 'page',
     title,
-    body: { storage: { value: htmlBody, representation: 'storage' } },
+    body: { storage: { value: body, representation } },
     version: { number: version + 1 },
   };
   const res = await fetch(apiUrl(`content/${pageId}`), {
