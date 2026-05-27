@@ -192,9 +192,9 @@ export function NewDocumentScreen() {
         {phase === 'scratch' && (
           <>
             <Text style={styles.sectionTitle}>임시 페이지 미리보기</Text>
-            <TouchableOpacity onPress={() => openExternal(getPageUrl(scratchPageId))}>
+            <a href={getPageUrl(scratchPageId)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
               <Text style={styles.link}>Confluence에서 미리보기 →</Text>
-            </TouchableOpacity>
+            </a>
 
             <Text style={[styles.label, { marginTop: 20 }]}>추가 수정 (선택)</Text>
             <TextInput
@@ -226,9 +226,9 @@ export function NewDocumentScreen() {
         {phase === 'done' && (
           <>
             <Text style={styles.sectionTitle}>페이지 생성 완료!</Text>
-            <TouchableOpacity onPress={() => openExternal(finalPageUrl)}>
+            <a href={finalPageUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
               <Text style={styles.link}>{finalPageUrl}</Text>
-            </TouchableOpacity>
+            </a>
 
             <TouchableOpacity style={[styles.btn, { marginTop: 24 }]} onPress={handleReset}>
               <Text style={styles.btnText}>새 문서 작성</Text>
