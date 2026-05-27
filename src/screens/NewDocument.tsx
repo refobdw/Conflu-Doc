@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import {
   Text, TextInput, TouchableOpacity,
-  ScrollView, StyleSheet, ActivityIndicator, Linking,
+  ScrollView, StyleSheet, ActivityIndicator,
 } from 'react-native';
+
+function openExternal(url: string) {
+  if (typeof window !== 'undefined') {
+    window.open(url, '_blank');
+  }
+}
 import { ConfirmDialog, DialogButton } from '../components/ConfirmDialog';
 import { geminiRequest, GeminiTurn } from '../api/gemini';
 import {
@@ -186,7 +192,7 @@ export function NewDocumentScreen() {
         {phase === 'scratch' && (
           <>
             <Text style={styles.sectionTitle}>임시 페이지 미리보기</Text>
-            <TouchableOpacity onPress={() => Linking.openURL(getPageUrl(scratchPageId))}>
+            <TouchableOpacity onPress={() => openExternal(getPageUrl(scratchPageId))}>
               <Text style={styles.link}>Confluence에서 미리보기 →</Text>
             </TouchableOpacity>
 
@@ -220,7 +226,7 @@ export function NewDocumentScreen() {
         {phase === 'done' && (
           <>
             <Text style={styles.sectionTitle}>페이지 생성 완료!</Text>
-            <TouchableOpacity onPress={() => Linking.openURL(finalPageUrl)}>
+            <TouchableOpacity onPress={() => openExternal(finalPageUrl)}>
               <Text style={styles.link}>{finalPageUrl}</Text>
             </TouchableOpacity>
 
