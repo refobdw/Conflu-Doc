@@ -10,7 +10,7 @@ import { useLayout } from '../hooks/useLayout';
 import { geminiRequest, GeminiTurn } from '../api/gemini';
 import {
   getConfluencePage, createConfluencePage, updateConfluencePage,
-  deleteConfluencePage, extractPageId, getPageUrl,
+  deleteConfluencePage, extractPageId, getPageUrl, cleanHtmlForConfluence,
 } from '../api/confluence';
 
 const MAX_FULL_TURNS = 2;
@@ -49,7 +49,8 @@ export function EditDocumentScreen() {
     setStatus('페이지를 불러오는 중...');
     try {
       const page = await getConfluencePage(pageId);
-      const content = page.body?.storage?.value ?? '';
+      const rawContent = page.body?.storage?.value ?? '';
+      const content = cleanHtmlForConfluence(rawContent);
       setOriginalContent(content);
       setOriginalTitle(page.title);
       setOriginalPageId(pageId);
