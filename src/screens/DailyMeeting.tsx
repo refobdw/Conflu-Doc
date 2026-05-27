@@ -63,8 +63,11 @@ export function DailyMeetingScreen() {
         pageId = page.id;
       }
       const url = getPageUrl(pageId);
-      setStatus(`완료! ${url}`);
-      showAlert('업로드 완료', url);
+      setStatus('업로드 완료!');
+      showAlert('업로드 완료', '페이지가 생성되었습니다.', [
+        { text: '페이지 열기', onPress: () => { setAlert(CLOSED); window.open(url, '_blank'); } },
+        { text: '확인', onPress: () => setAlert(CLOSED) },
+      ]);
     } catch (e: any) {
       showAlert('오류', e.message);
     } finally {
