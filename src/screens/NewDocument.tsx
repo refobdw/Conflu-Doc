@@ -57,7 +57,7 @@ export function NewDocumentScreen() {
       const st = `[임시] ${title} - ${new Date().toLocaleString('ko-KR')}`;
       setScratchTitle(st);
       setStatus('임시 페이지 생성 중...');
-      const scratch = await createConfluencePage(st, wiki, undefined, 'wiki');
+      const scratch = await createConfluencePage(st, wiki, CONFIG.atlassian.parentIdDoc, 'wiki');
       setScratchPageId(scratch.id);
       setScratchVersion(scratch.version?.number ?? 1);
       setPhase('scratch');
