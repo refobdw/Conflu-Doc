@@ -8,8 +8,10 @@ import { HtmlPreview } from '../components/HtmlPreview';
 import { ConfirmDialog, DialogButton } from '../components/ConfirmDialog';
 import { useLayout } from '../hooks/useLayout';
 import { parseDailyInput, generateDailyHTML, optimizeWithAI, getDailyTitle } from '../utils/dailyMeeting';
-import { createConfluencePage, searchConfluenceByTitle, updateConfluencePage, getPageUrl } from '../api/confluence';
-import { createNotionPage } from '../api/notion';
+import {
+  createConfluencePage, searchConfluenceByTitle,
+  updateConfluencePage, getPageUrl,
+} from '../api/confluence';
 import { CONFIG } from '../config';
 
 type AlertState = { visible: boolean; title: string; message: string; buttons: DialogButton[] };
@@ -57,32 +59,14 @@ export function DailyMeetingScreen() {
         await updateConfluencePage(page.id, title, html, page.version.number);
         pageId = page.id;
       } else {
-        const page = await createConfluencePage(title, html);
+        const page = await createConfluencePage(title, html, CONFIG.atlassian.parentIdDaily);
         pageId = page.id;
       }
       const url = getPageUrl(pageId);
       setStatus(`완료! ${url}`);
-      showAlert('업로드 완료', url, [
-        { text: '닫기', cancel: true, onPress: () => setAlert(CLOSED) },
-        ...(CONFIG.notion.apiKey ? [{
-          text: 'Notion에도 저장',
-          onPress: () => { setAlert(CLOSED); handleNotionSave(url); },
-        }] : []),
-      ]);
+      showAlert('업로드 완료', url);
     } catch (e: any) {
       showAlert('오류', e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleNotionSave(confluenceUrl: string) {
-    setLoading(true);
-    try {
-      const result = await createNotionPage(title, html, confluenceUrl);
-      showAlert('Notion 저장 완료', result.url);
-    } catch (e: any) {
-      showAlert('Notion 오류', e.message);
     } finally {
       setLoading(false);
     }
@@ -96,7 +80,8 @@ export function DailyMeetingScreen() {
       <Text style={styles.label}>회의록 내용</Text>
       <TextInput
         style={[styles.input, styles.multiline]} value={content} onChangeText={setContent}
-        placeholder={'### 프로그램\n- 작업 내용\n\n### 엔진\n- 작업 내용'} multiline numberOfLines={12}
+        placeholder={'### 프로그램\n- 작업 내용\n\n### 엔진\n- 작업 내용\n\n### 기획\n- 작업 내용'}
+        multiline numberOfLines={12}
       />
 
       {status ? <Text style={styles.status}>{status}</Text> : null}
