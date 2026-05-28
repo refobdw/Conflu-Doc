@@ -69,7 +69,7 @@ export function NewDocumentScreen() {
       setPhase('scratch');
       setStatus('임시 페이지가 생성되었습니다. 아래 링크에서 미리보기 하세요.');
     } catch (e: any) {
-      showAlert('오류', `${e.message}\n\n[debug] parentIdDoc: "${CONFIG.atlassian.parentIdDoc}"`);
+      showAlert('오류', e.message);
       setStatus('');
     } finally {
       setLoading(false);
