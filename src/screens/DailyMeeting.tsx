@@ -26,6 +26,7 @@ export function DailyMeetingScreen() {
   const [status, setStatus] = useState('');
   const [previewVisible, setPreviewVisible] = useState(false);
   const [alert, setAlert] = useState<AlertState>(CLOSED);
+  const [uploadedUrl, setUploadedUrl] = useState('');
 
   const showAlert = (title: string, message: string, buttons?: DialogButton[]) =>
     setAlert({ visible: true, title, message, buttons: buttons ?? [{ text: '확인', onPress: () => setAlert(CLOSED) }] });
@@ -66,11 +67,8 @@ export function DailyMeetingScreen() {
       const page = await createConfluencePage(finalTitle, html, CONFIG.atlassian.parentIdDaily);
       const pageId = page.id;
       const url = getPageUrl(pageId);
+      setUploadedUrl(url);
       setStatus('업로드 완료!');
-      showAlert('업로드 완료', '페이지가 생성되었습니다.', [
-        { text: '페이지 열기', onPress: () => { setAlert(CLOSED); window.open(url, '_blank'); } },
-        { text: '확인', onPress: () => setAlert(CLOSED) },
-      ]);
     } catch (e: any) {
       showAlert('오류', e.message);
     } finally {
@@ -91,6 +89,11 @@ export function DailyMeetingScreen() {
       />
 
       {status ? <Text style={styles.status}>{status}</Text> : null}
+      {uploadedUrl ? (
+        <a href={uploadedUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+          <Text style={styles.link}>페이지 열기 →</Text>
+        </a>
+      ) : null}
       {loading && <ActivityIndicator style={{ marginVertical: 8 }} />}
 
       <TouchableOpacity style={styles.btn} onPress={handleGenerate} disabled={loading}>
@@ -138,4 +141,5 @@ const styles = StyleSheet.create({
   btnSecondary: { backgroundColor: '#6554C0' },
   btnSuccess: { backgroundColor: '#00875A' },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  link: { color: '#0052CC', fontSize: 14, marginTop: 8 },
 });
