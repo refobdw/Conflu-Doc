@@ -111,6 +111,18 @@ export function DailyMeetingScreen() {
           <Text style={styles.btnText}>Confluence 업로드</Text>
         </TouchableOpacity>
       ) : null}
+
+      {uploadedUrl ? (
+        <TouchableOpacity style={[styles.btn, styles.btnDanger]} onPress={() => {
+          setTitle(getDailyTitle());
+          setContent('');
+          setHtml('');
+          setStatus('');
+          setUploadedUrl('');
+        }} disabled={loading}>
+          <Text style={styles.btnText}>새 회의록 작성</Text>
+        </TouchableOpacity>
+      ) : null}
     </ScrollView>
   );
 
@@ -140,6 +152,7 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: '#0052CC', borderRadius: 6, padding: 14, alignItems: 'center', marginTop: 12 },
   btnSecondary: { backgroundColor: '#6554C0' },
   btnSuccess: { backgroundColor: '#00875A' },
+  btnDanger: { backgroundColor: '#DE350B' },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 15 },
   link: { color: '#0052CC', fontSize: 14, marginTop: 8 },
 });
