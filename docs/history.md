@@ -31,9 +31,17 @@
 - **외부 링크는 항상 `<a>` 태그**: React Native Web + PWA 환경에서 `window.open` / `Linking.openURL`은 Modal 안에서 팝업 차단에 걸림. `<a href target="_blank">`만 신뢰할 수 있음.
 
 ### 개선 아이디어 (다음 세션 후보)
-- [ ] `NewDocument.tsx`의 `openExternal` 함수 제거 (미사용 dead code, import 위치도 잘못됨)
-- [ ] `DailyMeeting.tsx`에서 `updateConfluencePage` import 제거 (더 이상 사용 안 함)
-- [ ] `uploadedUrl` 상태를 `handleGenerate` 호출 시 초기화 (새 회의록 생성 시 이전 링크가 남아있음)
+- [x] `NewDocument.tsx`의 `openExternal` 함수 제거 (미사용 dead code, import 위치도 잘못됨)
+- [x] `DailyMeeting.tsx`에서 `updateConfluencePage` import 제거 (더 이상 사용 안 함)
+- [x] `uploadedUrl` 상태를 `handleGenerate` 호출 시 초기화 (새 회의록 생성 시 이전 링크가 남아있음)
 - [ ] 중복 제목 suffix 탐색이 API 호출 N번 — 실용적으론 문제없으나 개선 가능
 - [ ] `[임시]` scratch page 누수 방지 — 브라우저 종료 시 삭제 안 됨 (beforeunload 이벤트로 정리 시도 가능)
 - [ ] Vercel Sensitive 변수 저장 확인 어려움 — 주요 설정값은 non-Sensitive로 관리하거나 README에 명시
+
+---
+
+## 2026-05-28 | 코드 정리 (dead code 제거, UX 버그 수정)
+
+### 완료된 작업
+- **`src/screens/NewDocument.tsx`**: 미사용 `openExternal` 함수 및 잘못된 위치의 import 제거
+- **`src/screens/DailyMeeting.tsx`**: 미사용 `updateConfluencePage` import 제거; `handleGenerate` 호출 시 `uploadedUrl` 초기화
