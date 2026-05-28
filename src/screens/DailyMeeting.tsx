@@ -9,8 +9,7 @@ import { ConfirmDialog, DialogButton } from '../components/ConfirmDialog';
 import { useLayout } from '../hooks/useLayout';
 import { parseDailyInput, generateDailyHTML, optimizeWithAI, getDailyTitle } from '../utils/dailyMeeting';
 import {
-  createConfluencePage, searchConfluenceByTitle,
-  updateConfluencePage, getPageUrl,
+  createConfluencePage, searchConfluenceByTitle, getPageUrl,
 } from '../api/confluence';
 import { CONFIG } from '../config';
 
@@ -35,6 +34,7 @@ export function DailyMeetingScreen() {
     if (!content.trim()) { showAlert('오류', '회의록 내용을 입력해주세요.'); return; }
     setLoading(true);
     setStatus('파싱 및 AI 최적화 중...');
+    setUploadedUrl('');
     try {
       let sections = parseDailyInput(content);
       sections = await optimizeWithAI(sections);

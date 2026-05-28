@@ -3,12 +3,6 @@ import {
   Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, ActivityIndicator,
 } from 'react-native';
-
-function openExternal(url: string) {
-  if (typeof window !== 'undefined') {
-    window.open(url, '_blank');
-  }
-}
 import { ConfirmDialog, DialogButton } from '../components/ConfirmDialog';
 import { geminiRequest, GeminiTurn } from '../api/gemini';
 import {
