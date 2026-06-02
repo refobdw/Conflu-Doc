@@ -18,6 +18,7 @@ export function parseDailyInput(inputText: string): DailySections {
     else if (header.includes('기획')) found = '기획/PD';
     else if (header.includes('아트') || header.includes('AD')) found = 'AD';
     else if (header.includes('PM')) found = 'PM';
+    else if (header.includes('CCO')) found = 'CCO';
     else if (header.includes('PD')) found = 'CCO';
     else if (header.includes('대표님') || header.includes('경영진')) found = '대표님';
     else if (header.includes('공지') || header.includes('기타')) found = '공지 및 기타';
