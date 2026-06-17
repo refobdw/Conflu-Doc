@@ -2,7 +2,29 @@ import { geminiRequestRaw } from '../api/gemini';
 
 export type DailySections = Record<string, string[]>;
 
-const SECTION_KEYS = ['프로그램', '엔진', '기획/PD', 'AD', 'PM', 'CCO', '대표님', '공지 및 기타'];
+interface SectionDef {
+  key: string;
+  match: (h: string) => boolean;
+}
+
+// 배열 순서 = 테이블/AI 출력 순서, key = 표시 라벨
+const SECTIONS: SectionDef[] = [
+  { key: '프로그램', match: (h) => h.includes('프로그램') },
+  { key: '엔진', match: (h) => h.includes('엔진') },
+  { key: '아트', match: (h) => h.includes('아트') || h.includes('AD') },
+  { key: '기획', match: (h) => h.includes('기획') },
+  { key: 'PM', match: (h) => h.includes('PM') },
+  { key: 'PD', match: (h) => h.includes('PD') },
+  { key: 'CCO', match: (h) => h.includes('CCO') },
+  { key: '대표님', match: (h) => h.includes('대표님') || h.includes('경영진') },
+  { key: '기타', match: (h) => h.includes('기타') || h.includes('공지') },
+];
+const SECTION_KEYS = SECTIONS.map((s) => s.key);
+// '#' 없이 한 줄로 적힌 헤더도 인식 (샘플의 '프로그램팀' 등 별칭 포함)
+const EXACT_HEADERS = [
+  '프로그램', '프로그램팀', '엔진', '엔진팀', '아트', '아트팀',
+  '기획', 'PM', 'PD', 'CCO', '대표님', '경영진', '기타',
+];
 
 export function parseDailyInput(inputText: string): DailySections {
   const sections: DailySections = Object.fromEntries(SECTION_KEYS.map((k) => [k, []]));
@@ -11,20 +33,12 @@ export function parseDailyInput(inputText: string): DailySections {
   for (const line of inputText.split('\n')) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    const header = trimmed.replace(/^###\s*/, '').trim();
-    let found: string | null = null;
-    if (header.includes('프로그램')) found = '프로그램';
-    else if (header.includes('엔진')) found = '엔진';
-    else if (header.includes('기획')) found = '기획/PD';
-    else if (header.includes('아트') || header.includes('AD')) found = 'AD';
-    else if (header.includes('PM')) found = 'PM';
-    else if (header.includes('CCO')) found = 'CCO';
-    else if (header.includes('PD')) found = 'CCO';
-    else if (header.includes('대표님') || header.includes('경영진')) found = '대표님';
-    else if (header.includes('공지') || header.includes('기타')) found = '공지 및 기타';
+    const headerText = trimmed.replace(/^#+\s*/, '').trim();
+    const matched = SECTIONS.find((s) => s.match(headerText));
+    const isExact = EXACT_HEADERS.some((h) => h.toLowerCase() === trimmed.toLowerCase());
 
-    if (found && (trimmed.startsWith('###') || SECTION_KEYS.includes(trimmed))) {
-      currentSection = found;
+    if (matched && (trimmed.startsWith('#') || isExact)) {
+      currentSection = matched.key;
       continue;
     }
     if (currentSection) sections[currentSection].push(line);
@@ -62,9 +76,9 @@ export async function optimizeWithAI(sections: DailySections): Promise<DailySect
 
 ### [응답 형식]
 반드시 아래와 같은 JSON 구조로만 답변하십시오. 다른 설명이나 텍스트는 일체 제외하십시오.
-{"프로그램":["- **주제:** 내용"],"엔진":[],"기획/PD":[],"AD":[],"PM":[],"CCO":[],"대표님":[],"공지 및 기타":[]}
+{"프로그램":["- **주제:** 내용"],"엔진":[],"아트":[],"기획":[],"PM":[],"PD":[],"CCO":[],"대표님":[],"기타":[]}
 
-**주의:** 입력된 "아트"는 "AD" 키에, "경영진"은 "대표님" 키에 매핑하십시오.
+**주의:** 입력된 "경영진"은 "대표님" 키에, "공지/공지사항"은 "기타" 키에 매핑하십시오.
 
 입력 내용:
 ${JSON.stringify(sections, null, 2)}`;
