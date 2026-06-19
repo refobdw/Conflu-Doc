@@ -21,6 +21,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     confluenceParentIdDoc: process.env.CONFLUENCE_PARENT_ID_DOC,
     confluenceParentIdDaily: process.env.CONFLUENCE_PARENT_ID_DAILY,
     geminiApiKey: process.env.GEMINI_API_KEY,
-    geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    geminiModel: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite',
   },
 });
