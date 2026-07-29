@@ -14,7 +14,7 @@ export const CONFIG = {
   },
   gemini: {
     apiKey: extra.geminiApiKey as string,
-    model: (extra.geminiModel as string) || 'gemini-3.1-flash-lite',
+    model: (extra.geminiModel as string) || 'gemini-3.6-flash',
   },
 };
 
