@@ -46,18 +46,66 @@ export function parseDailyInput(inputText: string): DailySections {
   return sections;
 }
 
-function formatItem(line: string): string {
-  return line
-    .trim()
-    .replace(/^[-•]\s*/, '')
-    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+function convertToNestedHTML(lines: string[]): string {
+  if (!lines || lines.length === 0) return '';
+
+  let html = '<ul>';
+  let currentLevel = 0;
+  let openLevels = 1; // 현재 열린 <ul> 개수 추적
+  let firstItem = true;
+
+  for (const line of lines) {
+    const match = line.match(/^(\s*)([-*•]?)\s*(.*)/);
+    if (!match) continue;
+
+    const indent = match[1].length;
+    const level = Math.floor(indent / 2);
+    let content = match[3].trim();
+
+    if (!content) continue;
+
+    content = content.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+    if (!content.includes('<b>')) {
+      const catMatch = content.match(/^([^:-]+)([:\-]+)\s*(.*)/);
+      if (catMatch && catMatch[1].length < 25 && catMatch[3].length > 0) {
+        content = `<b>${catMatch[1]}${catMatch[2]}</b> ${catMatch[3]}`;
+      }
+    }
+
+    if (level > currentLevel) {
+      for (let i = 0; i < level - currentLevel; i++) {
+        html += '<ul>';
+        openLevels++;
+      }
+    } else if (level < currentLevel) {
+      html += '</li>';
+      for (let i = 0; i < currentLevel - level; i++) {
+        html += '</ul></li>';
+        openLevels--;
+      }
+    } else if (!firstItem) {
+      html += '</li>';
+    }
+
+    html += `<li>${content}`;
+    currentLevel = level;
+    firstItem = false;
+  }
+
+  html += '</li>';
+  for (let i = 0; i < openLevels; i++) {
+    html += '</ul>';
+    if (i < openLevels - 1) html += '</li>';
+  }
+
+  return html.replace(/<li><\/li>/g, '').replace(/<ul><\/ul>/g, '');
 }
 
 export function generateDailyHTML(sections: DailySections): string {
   const rows = SECTION_KEYS.map((key) => {
     const items = sections[key] ?? [];
-    const listItems = items.filter(Boolean).map((l) => `<li>${formatItem(l)}</li>`).join('');
-    return `<tr><td><b>${key}</b></td><td><ul>${listItems}</ul></td></tr>`;
+    return `<tr><td><b>${key}</b></td><td>${convertToNestedHTML(items)}</td></tr>`;
   }).join('');
   return `<table><thead><tr><th>팀</th><th>Doing</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
@@ -80,6 +128,11 @@ export async function optimizeWithAI(sections: DailySections): Promise<DailySect
    - 주제에 넣은 단어를 내용에서 의미 없이 반복하지 마십시오. 예: "...비동기 로딩 방식으로 로딩 방식 수정" → "...비동기 로딩 방식으로 수정".
    - 같은 대상·맥락의 항목은 하나로 통합하십시오. 예: "메타 기획"과 "세계관"이 동일 작업이면 한 항목으로 합침.
 6. 게임 개발 전문 용어는 그대로 사용하십시오.
+7. **다단계(하위) 불릿 보존:** 입력 항목에 하위 불릿(들여쓰기된 하위 항목)이 있다면, 결과에서도 반드시 별도의 하위 항목으로 유지하십시오. 상위 항목 하나로 합치거나 하위 내용을 요약해 없애지 마십시오.
+   - 하위 항목은 배열에서 상위 항목 바로 다음 요소(들)로 넣으십시오.
+   - 들여쓰기는 **2칸 = 1단계**로 표기하십시오 (예: 1단계 하위 = 앞에 공백 2칸, 2단계 하위 = 공백 4칸).
+   - 하위 항목에는 \`**주제:**\` 라벨을 억지로 붙이지 않아도 됩니다. \`  - 내용\` 형식으로 충분합니다.
+   - 예: 입력이 "- 인물정보 UI 개발 진행 중" 다음 줄에 들여쓰기된 "- 로그인 화면 완료", "- 프로필 화면 작업 중"이 있으면, 출력 배열은 \`["- **인물정보:** UI 개발 진행 중", "  - 로그인 화면 완료", "  - 프로필 화면 작업 중"]\`처럼 하위 항목의 들여쓰기를 유지하십시오.
 
 ### [응답 형식]
 반드시 아래와 같은 JSON 구조로만 답변하십시오. 다른 설명이나 텍스트는 일체 제외하십시오.
